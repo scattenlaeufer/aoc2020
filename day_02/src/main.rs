@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
+use unicode_segmentation::UnicodeSegmentation;
 
 fn main() {
     let mut file = File::open("input").unwrap();
@@ -7,9 +8,10 @@ fn main() {
     file.read_to_string(&mut content).unwrap();
     let string_vec = content.split("\n").collect::<Vec<&str>>();
 
-    let mut valid_passwords = 0;
+    let mut part_1_valid_passwords = 0;
+    let mut part_2_valid_passwords = 0;
 
-    for rule_string in &string_vec[..string_vec.len()-1] {
+    for rule_string in &string_vec[..string_vec.len() - 1] {
         let input_split = rule_string.split(": ").collect::<Vec<&str>>();
         let password = input_split[1];
         let rule = input_split[0].split(" ").collect::<Vec<&str>>();
@@ -19,9 +21,26 @@ fn main() {
         let high = letter_amount[1].to_string().parse::<usize>().unwrap();
         let amount = password.matches(letter).count();
         if low <= amount && amount <= high {
-            valid_passwords += 1;
+            part_1_valid_passwords += 1;
+        }
+
+        let mut segmented_password = UnicodeSegmentation::graphemes(password, true);
+        println!("{:?} {} {}-{}", password, letter, low, high);
+        println!(
+            "{:?} - {:?}",
+            segmented_password.clone().nth(low - 1),
+            segmented_password.clone().nth(high - 1)
+        );
+        if (segmented_password.clone().nth(low - 1).unwrap() == letter)
+            ^ (segmented_password.nth(high - 1).unwrap() == letter)
+        {
+            part_2_valid_passwords += 1;
+            println!("true");
+        } else {
+            println!("false");
         }
     }
 
-    println!("valid passwords: {}", valid_passwords);
+    println!("part 1 valid passwords: {}", part_1_valid_passwords);
+    println!("part 2 valid passwords: {}", part_2_valid_passwords);
 }
