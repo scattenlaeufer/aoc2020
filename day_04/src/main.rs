@@ -1,6 +1,105 @@
 use std::fs::File;
 use std::io::prelude::*;
 
+fn validate_year_range(year_str: &str, min_year: u16, max_year: u16) -> Option<u16> {
+    let year = year_str.to_string().parse::<u16>().unwrap_or_default();
+    if year >= min_year && year <= max_year {
+        Some(year)
+    } else {
+        None
+    }
+}
+
+fn validate_birth_year(birth_year: &str) -> Option<u16> {
+    //! four digits; at least `1920` and at most `2002`
+    validate_year_range(birth_year, 1920, 2002)
+}
+
+fn validate_issue_year(issue_year: &str) -> Option<u16> {
+    //! four digits; at least `2010` and at most `2020`
+    validate_year_range(issue_year, 2010, 2020)
+}
+
+fn validate_expiration_year(expiration_year: &str) -> Option<u16> {
+    //! four digits; at least `2020` and at most `2030`
+    validate_year_range(expiration_year, 2020, 2030)
+}
+
+fn validate_height(height: &str) -> Option<String> {
+    //! a number followed by either `cm` or `in`:
+    //! - If `cm`, the number must be at least `150` and at most `193`
+    //! - If `in`, the number must be at least `59` and at most `76`
+    if height.len() >= 4 && height.len() <= 5 {
+        let unit = &height[height.len() - 2..];
+        let value = &height[..height.len() - 2].parse::<u8>().unwrap_or_default();
+        match unit {
+            "cm" => {
+                if value >= &150 && value <= &193 {
+                    Some(height.to_string())
+                } else {
+                    None
+                }
+            }
+            "in" => {
+                if value >= &59 && value <= &76 {
+                    Some(height.to_string())
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    } else {
+        None
+    }
+}
+
+fn validate_hair_color(hair_color: &str) -> Option<String> {
+    //! a `#` followed by exactly six characters `0`-`9` or `a`-`f`
+    if hair_color.len() == 7 && hair_color.chars().nth(0) == Some('#') {
+        for character in hair_color[1..].chars() {
+            if !([
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+            ]
+            .contains(&character))
+            {
+                return None;
+            }
+        }
+        Some(hair_color.to_string())
+    } else {
+        None
+    }
+}
+
+fn validate_eye_color(eye_color: &str) -> Option<String> {
+    //! exactly one of: `amb` `blu` `brn` `gry` `grn` `hzl` `oth`
+    if ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"].contains(&eye_color) {
+        Some(eye_color.to_string())
+    } else {
+        None
+    }
+}
+
+fn validate_passport_id(passport_id: &str) -> Option<String> {
+    //! a nine-digit number, including leading zeroes
+    if passport_id.len() == 9 {
+        for character in passport_id.chars() {
+            if !(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].contains(&character)) {
+                return None;
+            }
+        }
+        Some(passport_id.to_string())
+    } else {
+        None
+    }
+}
+
+fn validate_country_id(country_id: &str) -> Option<String> {
+    //! ignored, missing or not
+    Some(country_id.to_string())
+}
+
 #[derive(Debug)]
 struct Passport {
     birth_year: Option<u16>,
@@ -31,14 +130,14 @@ impl Passport {
 impl Passport {
     fn add_value(&mut self, key: &str, value: &str) {
         match key {
-            "byr" => self.birth_year = Some(value.to_string().parse::<u16>().unwrap()),
-            "iyr" => self.issue_year = Some(value.to_string().parse::<u16>().unwrap()),
-            "eyr" => self.expiration_year = Some(value.to_string().parse::<u16>().unwrap()),
-            "hgt" => self.height = Some(value.to_string()),
-            "hcl" => self.hair_color = Some(value.to_string()),
-            "ecl" => self.eye_color = Some(value.to_string()),
-            "pid" => self.passport_id = Some(value.to_string()),
-            "cid" => self.country_id = Some(value.to_string()),
+            "byr" => self.birth_year = validate_birth_year(value),
+            "iyr" => self.issue_year = validate_issue_year(value),
+            "eyr" => self.expiration_year = validate_expiration_year(value),
+            "hgt" => self.height = validate_height(value),
+            "hcl" => self.hair_color = validate_hair_color(value),
+            "ecl" => self.eye_color = validate_eye_color(value),
+            "pid" => self.passport_id = validate_passport_id(value),
+            "cid" => self.country_id = validate_country_id(value),
             &_ => (),
         }
     }
@@ -62,18 +161,15 @@ fn main() {
     let mut passport_vec: Vec<Passport> = Vec::new();
 
     for passport_str in string_vec {
-        println!("{:?}", passport_str);
         let mut passport = Passport::new();
-        for line in passport_str.split("\n") {
-            for data_str in line.split(" ") {
-                println!("{:?}", data_str);
-                let data = data_str.split(":").collect::<Vec<&str>>();
+        for line in passport_str.split('\n') {
+            for data_str in line.split(' ') {
+                let data = data_str.split(':').collect::<Vec<&str>>();
                 if data.len() > 1 {
                     passport.add_value(data[0], data[1]);
                 }
             }
         }
-        //println!("{:#?}", passport);
         passport_vec.push(passport);
     }
 
