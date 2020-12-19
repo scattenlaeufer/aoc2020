@@ -10,19 +10,18 @@ struct GroupAnswers {
 impl GroupAnswers {
     fn new(answers: &str) -> Self {
         let mut answered_yes = Vec::new();
-        for member in answers.split("\n") {
+        for member in answers.split('\n') {
             for answer in member.chars() {
                 if !answered_yes.contains(&answer) {
                     answered_yes.push(answer)
                 }
             }
         }
-        let members = answers.split("\n").collect::<Vec<&str>>();
+        let members = answers.split('\n').collect::<Vec<&str>>();
         let mut answered_yes_by_everyone = members[0].chars().collect::<Vec<char>>();
         for member in &members[1..] {
-            let answer_chars = member.chars().collect::<Vec<char>>();
             for answer in answered_yes_by_everyone.clone() {
-                if !answer_chars.contains(&answer) {
+                if !member.chars().any(|x| x == answer) {
                     if let Some(i) = answered_yes_by_everyone.iter().position(|x| x == &answer) {
                         answered_yes_by_everyone.remove(i);
                     }
